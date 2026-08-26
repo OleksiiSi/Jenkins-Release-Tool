@@ -1,0 +1,44 @@
+{
+  "jenkins": {
+    "base_url": "https://jenkins.example.com",
+    "username": ""
+  },
+  "notification_connectors": {
+    "teams": {
+      "webhook_url": "https://your-org.webhook.office.com/webhookb2/REPLACE-ME"
+    }
+  },
+  "job_run_config": {
+    "poll_interval_minutes": 10,
+    "max_retries": 2
+  },
+  "jobs_config": {
+    "general": {
+      "parameters": [
+        { "name": "REPLACE_WITH_PARAM_NAME", "type": "string", "is_unique_between_tickets": true }
+      ],
+      "environments": [
+        { "name": "REPLACE_WITH_ENVIRONMENT_NAME_1", "promotion_process": "REPLACE_WITH_PROMOTION_PROCESS_NAME_1" },
+        { "name": "REPLACE_WITH_ENVIRONMENT_NAME_2", "promotion_process": "REPLACE_WITH_PROMOTION_PROCESS_NAME_2" }
+      ]
+    },
+    "job_specific": {
+      "REPLACE_WITH_JOB_NAME_1": {
+        "parameters": [
+          { "name": "REPLACE_WITH_PARAM_NAME", "type": "dropdown", "options": ["REPLACE_WITH_OPTION_1", "REPLACE_WITH_OPTION_2"] }
+        ],
+        "environments": []
+      },
+      "REPLACE_WITH_JOB_NAME_2": {
+        "parameters": [
+          { "name": "REPLACE_WITH_PARAM_NAME", "type": "boolean" }
+        ],
+        "environments": []
+      },
+      "REPLACE_WITH_JOB_NAME_3": {
+        "parameters": [],
+        "environments": []
+      }
+    }
+  }
+}

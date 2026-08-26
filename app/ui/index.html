@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Release Tool</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div class="titlebar">
+        <h1><span class="dot"></span> Release Tool</h1>
+        <div class="conn-status">
+            <span><span class="chip" id="jenkinsChip"></span> Jenkins</span>
+            <span><span class="chip" id="teamsChip"></span> Teams</span>
+        </div>
+        <div class="titlebar-tabs">
+            <button class="tab-btn" id="logTabBtn">📜 Log</button>
+            <button class="tab-btn" id="settingsBtn">⚙ Settings</button>
+            <span class="titlebar-sep"></span>
+            <button class="tab-btn danger" id="exitBtn">⏻ Exit</button>
+        </div>
+    </div>
+
+    <div class="main" id="mainView">
+        <!-- LEFT: tickets -->
+        <div class="tickets-col">
+            <div class="tickets-header">
+                <h2 id="ticketsHeader">Tickets (0)</h2>
+                <button class="add-ticket-btn" id="addTicketBtn">+ Add ticket</button>
+            </div>
+
+            <div class="error-banner" id="tokenErrorBanner">
+                Can't start — Jenkins API token is not set. <a href="#" id="tokenErrorBannerLink" style="color:#ffb3b8; text-decoration:underline;">Open settings →</a>
+            </div>
+
+            <div class="error-banner" id="errorBanner">
+                Can't start — there are errors:
+                <ul id="errorList"></ul>
+            </div>
+
+            <div class="tickets-list" id="ticketsList"></div>
+
+            <div class="run-panel">
+                <button class="run-btn" id="runBtn">▶ Run all (<span id="ticketCount">0</span> tickets)</button>
+                <span class="run-status" id="runStatus">Ready to run</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOG TAB -->
+    <div class="tab-view" id="logView">
+        <div class="tab-back-bar">
+            <button class="back-btn">← Back</button>
+        </div>
+        <div class="log-panel">
+            <h2>Log <span class="clear-btn" id="logClearBtn">Clear</span></h2>
+            <div class="log-box" id="logBox"></div>
+        </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div class="tab-view" id="settingsView">
+        <div class="tab-back-bar">
+            <button class="back-btn">← Back</button>
+        </div>
+        <div class="settings-view-inner-scroll">
+            <div class="settings-inner">
+
+                <div class="settings-section">
+                    <h3>Jenkins</h3>
+                    <div class="settings-field">
+                        <label for="jenkinsBaseUrl">Base URL</label>
+                        <input class="settings-input" id="jenkinsBaseUrl">
+                    </div>
+                    <div class="settings-field">
+                        <label for="jenkinsUsername">Username</label>
+                        <input class="settings-input" id="jenkinsUsername" placeholder="Jenkins account username (paired with the API token below)">
+                    </div>
+                    <div class="settings-field" id="tokenSettingsField">
+                        <label for="tokenInput" style="display:flex; justify-content:space-between; align-items:center;">
+                            <span>Jenkins API token</span>
+                            <span id="tokenStatus" style="color: var(--warn); font-size:11px;">● not saved</span>
+                        </label>
+                        <div class="settings-row">
+                            <input class="settings-input" id="tokenInput" type="password" placeholder="Paste Jenkins API token">
+                            <button class="list-add-btn" style="margin:0; flex-shrink:0;" id="saveTokenBtn">Save token</button>
+                            <button class="list-add-btn" style="margin:0; flex-shrink:0; display:none;" id="changeTokenBtn">Change</button>
+                        </div>
+                        <div class="token-hint" style="margin-top:6px;">The token is saved locally in Windows Credential Manager — you won't need to enter it again.</div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Job Run Behavior</h3>
+                    <p class="section-hint">Controls how each triggered build/promotion is watched: how often its status is polled, and how many times a failed attempt is retried before giving up.</p>
+                    <div class="settings-field">
+                        <label for="pollIntervalMinutes">Poll interval (min)</label>
+                        <div class="settings-row" style="max-width:160px;">
+                            <input class="settings-input" id="pollIntervalMinutes" type="number" min="1">
+                        </div>
+                    </div>
+                    <div class="settings-field">
+                        <label for="maxRetries">Max retries</label>
+                        <div class="settings-row" style="max-width:160px;">
+                            <input class="settings-input" id="maxRetries" type="number" min="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3 id="jobsConfigLabel">Jobs Config</h3>
+
+                    <h4 class="settings-subsection-heading">General</h4>
+                    <p class="section-hint">Applies to every job automatically - no per-job opt-in.</p>
+                    <div class="settings-field">
+                        <label id="generalParamsLabel">Parameters</label>
+                        <div class="list-editor" id="generalParamsList" aria-labelledby="generalParamsLabel"></div>
+                        <button class="list-add-btn" id="addGeneralParamBtn">+ Add parameter</button>
+                    </div>
+                    <div class="settings-field">
+                        <label id="generalEnvsLabel">Environments</label>
+                        <div class="list-editor" id="generalEnvsList" aria-labelledby="generalEnvsLabel"></div>
+                        <button class="list-add-btn" id="addGeneralEnvBtn">+ Add environment</button>
+                    </div>
+
+                    <h4 class="settings-subsection-heading">Job Specific</h4>
+                    <p class="section-hint">Only relevant when that job is selected on a ticket.</p>
+                    <div class="list-editor" id="jobsList" aria-labelledby="jobsConfigLabel"></div>
+                    <button class="list-add-btn" id="addJobConfigBtn">+ Add job</button>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Notifications</h3>
+                    <div class="settings-field">
+                        <label for="teamsWebhookUrl">MS Teams webhook URL</label>
+                        <input class="settings-input" id="teamsWebhookUrl">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="settings-footer">
+            <button class="btn-reset" id="resetSettingsBtn">Reset to defaults</button>
+            <button class="btn-save" id="saveSettingsBtn">Save</button>
+        </div>
+    </div>
+
+    <!-- Restart confirm modal -->
+    <div class="modal-overlay" id="restartModal">
+        <div class="modal-box">
+            <h4>Restart required</h4>
+            <p>Settings changes will apply after the app restarts. Restart now?</p>
+            <div class="modal-actions">
+                <button class="modal-btn-cancel">Cancel</button>
+                <button class="modal-btn-confirm primary">Restart</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remove ticket confirm modal -->
+    <div class="modal-overlay" id="removeTicketModal">
+        <div class="modal-box">
+            <h4>Remove this ticket?</h4>
+            <div class="modal-actions">
+                <button class="modal-btn-cancel">Cancel</button>
+                <button class="modal-btn-confirm">Remove</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exit confirm modal -->
+    <div class="modal-overlay" id="exitModal">
+        <div class="modal-box">
+            <h4>Exit Release Tool?</h4>
+            <p>This will fully close Release Tool, including any in-progress app processes tracking current builds and promotions. Are you sure you want to exit?</p>
+            <div class="modal-actions">
+                <button class="modal-btn-cancel">Cancel</button>
+                <button class="modal-btn-confirm">Exit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset confirm modal -->
+    <div class="modal-overlay" id="resetModal">
+        <div class="modal-box">
+            <h4>Reset settings?</h4>
+            <p>This will restore jobs, environments, the Jenkins URL, and other settings to their default values. Current changes will be lost. The app will restart to apply them.</p>
+            <div class="modal-actions">
+                <button class="modal-btn-cancel">Cancel</button>
+                <button class="modal-btn-confirm">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ticket card template - renderTicketCard() in app.js clones this and
+         wires up the dynamic bits; only the Jobs/Environments checkbox rows
+         (variable-length, driven by settings.jobs/settings.environments)
+         are built separately from checkboxRowTemplate below. -->
+    <template id="ticketCardTemplate">
+        <div class="ticket-card expanded">
+            <div class="ticket-card-head">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span class="chevron">▶</span>
+                    <input class="ticket-id-input" aria-label="Ticket ID">
+                </div>
+                <div class="ticket-head-right">
+                    <span class="ticket-summary"></span>
+                    <button class="icon-btn" type="button" aria-label="Remove ticket">✕</button>
+                </div>
+            </div>
+            <div class="ticket-body">
+                <div class="field-row">
+                    <label>General parameters</label>
+                    <div class="general-params-list"></div>
+                </div>
+                <div class="field-row">
+                    <label>General environments</label>
+                    <div class="checkbox-list environments-checkbox-list"></div>
+                </div>
+                <div class="field-row">
+                    <label>Jobs</label>
+                    <div class="jobs-checkbox-list"></div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- One value input row for a general or job-specific parameter on the
+         ticket card - label + a type-dispatched input slot filled by
+         renderParamInput() in app.js. -->
+    <template id="paramInputRowTemplate">
+        <div class="field-row param-input-row">
+            <label></label>
+            <div class="param-input-slot"></div>
+        </div>
+    </template>
+
+    <!-- One Jobs checkbox row on the ticket card - checkbox + label, plus
+         an expand block (job-specific parameter inputs + environment
+         checkboxes) populated by renderJobParamsBlock() in app.js when
+         checked. -->
+    <template id="jobCheckboxRowTemplate">
+        <div class="job-checkbox-row">
+            <label><input type="checkbox"><span class="job-checkbox-label"></span></label>
+            <div class="job-params-block"></div>
+        </div>
+    </template>
+
+    <!-- One Jobs/Environments checkbox row - cloned once per job/environment
+         name inside renderTicketCard()'s fillCheckboxList(). -->
+    <template id="checkboxRowTemplate">
+        <label><input type="checkbox"><span></span></label>
+    </template>
+
+    <!-- One parameter-definition row (name + type + options + optional
+         "unique" flag) - cloned for both Settings > Jobs Config > General >
+         Parameters and each job card's Parameters list. -->
+    <template id="paramDefRowTemplate">
+        <div class="list-row param-def-row">
+            <input class="settings-input param-def-name" style="max-width:160px;" placeholder="Parameter name" aria-label="Parameter name">
+            <select class="settings-input param-def-type" style="max-width:120px;" aria-label="Parameter type">
+                <option value="string">string</option>
+                <option value="boolean">boolean</option>
+                <option value="dropdown">dropdown</option>
+            </select>
+            <input class="settings-input param-def-options" placeholder="Options, comma-separated" aria-label="Dropdown options">
+            <label class="param-def-unique-wrap">
+                <input type="checkbox" class="param-def-unique"> unique
+            </label>
+            <button class="list-row-remove" type="button">✕</button>
+        </div>
+    </template>
+
+    <!-- One environment-definition row (name + promotion process) - cloned
+         for both Settings > Jobs Config > General > Environments and each
+         job card's Environments list. -->
+    <template id="envDefRowTemplate">
+        <div class="list-row">
+            <input class="settings-input env-def-name" style="max-width:140px;" placeholder="Environment" aria-label="Environment name">
+            <span style="color:var(--text-dim); font-size:12px;">→ promotion process:</span>
+            <input class="settings-input env-def-process" placeholder="Promotion process name" aria-label="Promotion process name">
+            <button class="list-row-remove" type="button">✕</button>
+        </div>
+    </template>
+
+    <!-- One job config card - Settings > Jobs Config > Job Specific. Cloned
+         and populated by buildJobConfigCard() in app.js; reuses the
+         ticket-card expand/collapse markup pattern. -->
+    <template id="jobConfigCardTemplate">
+        <div class="ticket-card expanded job-config-card">
+            <div class="ticket-card-head">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span class="chevron">▶</span>
+                    <input class="settings-input job-name-input" style="max-width:220px;" placeholder="Job name" aria-label="Job name">
+                </div>
+                <div class="ticket-head-right">
+                    <button class="icon-btn" type="button" aria-label="Remove job">✕</button>
+                </div>
+            </div>
+            <div class="ticket-body">
+                <div class="field-row">
+                    <label>Parameters</label>
+                    <div class="list-editor job-parameters-list"></div>
+                    <button class="list-add-btn" type="button">+ Add parameter</button>
+                </div>
+                <div class="field-row">
+                    <label>Environments</label>
+                    <div class="list-editor job-environments-list"></div>
+                    <button class="list-add-btn" type="button">+ Add environment</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
