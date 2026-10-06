@@ -137,30 +137,33 @@ class JenkinsClient(BaseClient):
 
     def promotion_exists(self, job_name: str, build_number: int, promotion_name: str) -> bool:
         """True if a promotion for this exact build_number is already recorded."""
-        data = self._get_promotion_process(job_name, promotion_name)
-
-        return any(b.get("target", {}).get("number") == build_number for b in data.get("builds", []))
+        return self._get_latest_promotion(job_name, build_number, promotion_name) is not None
 
     def get_promotion_status(self, job_name: str, build_number: int, promotion_name: str) -> dict:
         """{'building': bool, 'result': 'SUCCESS' | 'FAILURE' | None} for the
         promotion entry matching build_number. Assumes Jenkins lists newest
         promotion attempts first (unverified against a real instance) - this
         matters after a "redo" leaves more than one entry for the same build."""
-        data = self._get_promotion_process(job_name, promotion_name)
+        latest = self._get_latest_promotion(job_name, build_number, promotion_name)
 
-        for b in data.get("builds", []):
-            if b.get("target", {}).get("number") == build_number:
-                return {"building": b.get("building", False), "result": b.get("result")}
+        if latest is not None:
+            return {"building": latest.get("building"), "result": latest.get("result")}
 
         return {"building": False, "result": None}
 
-    def _get_promotion_process(self, job_name: str, promotion_name: str) -> dict:
+    def _get_latest_promotion(self, job_name: str, build_number: int, promotion_name: str) -> dict | None:
         response = requests.get(
-            f"{self.base_url}/job/{job_name}/promotion/process/{promotion_name}/api/json",
+            f"{self.base_url}/job/{job_name}/{build_number}/api/json",
+            params={"tree": "actions[promotions[name,promotionBuilds[result,building]]]"},
             auth=self._auth(),
             timeout=15,
         )
 
         response.raise_for_status()
 
-        return response.json()
+        for action in response.json().get("actions", []):
+            for promotion in action.get("promotions", []):
+                if promotion.get("name") == promotion_name and promotion.get("promotionBuilds"):
+                    return promotion["promotionBuilds"][0]
+
+        return None
