@@ -7,8 +7,6 @@ export async function saveToken() {
     updateTokenStatusUI(status.saved);
 }
 
-// Unlocks the token field for entering a replacement - saveToken() then
-// overwrites the keyring entry, same as the first-time save.
 export function changeToken() {
     const tokenInput = document.getElementById('tokenInput');
 

@@ -4,29 +4,18 @@ from core import cache_manager
 
 
 class BaseClient(ABC):
-    """Template for a client whose connectivity can be checked and cached.
-
-    Subclasses provide `_current_value` (the config that, if changed, forces
-    a fresh check) and `_test_connection` (the actual network probe).
-    """
-
     _CACHE_KEY: str
 
-    # Set on every check_connection() call - True if the cached "ok" result
-    # was reused, False if _test_connection() actually hit the network. Lets
-    # callers log *why* nothing happened on a passing check, not just that it
-    # passed.
     last_check_was_cached: bool = False
 
     @property
     @abstractmethod
     def _current_value(self) -> str:
-        """The client's current connection config (e.g. base_url+token, or a
-        webhook URL) - whatever changing it should force a fresh check."""
+        pass
 
     @abstractmethod
     def _test_connection(self) -> bool:
-        """Perform the actual network check. True if it succeeded."""
+        pass
 
     def check_connection(self) -> bool:
         fingerprint = self._current_value

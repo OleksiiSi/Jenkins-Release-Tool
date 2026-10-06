@@ -1,6 +1,3 @@
-// Trims a required text/number input, toggles its `.error` class, and
-// returns the trimmed value plus an error message (or null) - shared by the
-// three flat required fields in collectRequiredFieldsFromForm().
 function collectRequiredField(input, emptyMessage) {
     const value = input.value.trim();
     input.classList.toggle('error', !value);

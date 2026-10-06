@@ -12,21 +12,6 @@ def validate(
     teams_client: MSTeamsClient,
     log_buffer: LogBuffer,
 ) -> ValidationResult:
-    """Run every pre-run check against `tickets` and the two clients,
-    collecting all failures instead of stopping at the first one.
-
-    :param tickets: The run's requested tickets, each already carrying its
-        jobs' resolved parameters/environments.
-    :param jobs_config: settings.json's jobs_config, as-is - "general"
-        ({"parameters": [...], "environments": [...]}) drives the
-        uniqueness and required-ness checks for general parameters below;
-        "job_specific" (job name -> {"parameters": [...], "environments":
-        [...]}) drives which job-specific parameters each selected job
-        requires.
-    :param jenkins_client: Used for the Jenkins connectivity check.
-    :param teams_client: Used for the Teams connectivity check.
-    :param log_buffer: Connectivity check failures are logged here.
-    """
     general_parameters_config = jobs_config["general"]["parameters"]
     job_specific_config = jobs_config["job_specific"]
 
@@ -49,17 +34,10 @@ def validate(
 
 
 def _build_unique_value_trackers(general_parameters_config: list[dict]) -> dict[str, dict[str, str]]:
-    """name -> {value -> ticket_id that used it first}, one entry per
-    general parameter flagged unique. Shared across every ticket
-    `_validate_general_parameters` is called for, so uniqueness is tracked
-    across the whole run rather than reset per ticket."""
     return {param["name"]: {} for param in general_parameters_config if param.get("is_unique_between_tickets")}
 
 
 def _validate_jobs_and_environments_selected(ticket: TicketEnvRequest) -> list[str]:
-    """A ticket needs at least one job. Environments are optional - a job
-    with none is a build-only run (Runner skips promotion for it and logs
-    that it did so), so no environments-selected check is needed here."""
     if not ticket.jobs:
         return [f"{ticket.ticket_id}: no jobs selected"]
 
@@ -69,10 +47,6 @@ def _validate_jobs_and_environments_selected(ticket: TicketEnvRequest) -> list[s
 def _validate_general_parameters(
     ticket: TicketEnvRequest, general_parameters_config: list[dict], seen_unique_values: dict[str, dict[str, str]]
 ) -> list[str]:
-    """Required-ness and cross-ticket uniqueness for one ticket's general
-    parameters, read from its first job - every job on a ticket carries an
-    identical copy of each general value (the UI merges them in), so
-    reading from any one job is representative of the whole ticket."""
     errors = []
     representative_job = ticket.jobs[0]
 
@@ -99,8 +73,6 @@ def _validate_general_parameters(
 
 
 def _validate_job_specific_parameters(ticket: TicketEnvRequest, job_specific_config: dict[str, dict]) -> list[str]:
-    """Required-ness for each of a ticket's selected jobs' job-specific
-    parameters."""
     errors = []
 
     for requested_job in ticket.jobs:
@@ -117,7 +89,6 @@ def _validate_job_specific_parameters(ticket: TicketEnvRequest, job_specific_con
 def _validate_connectivity(
     token_missing: bool, jenkins_client: JenkinsClient, teams_client: MSTeamsClient, log_buffer: LogBuffer
 ) -> list[str]:
-    """Jenkins/Teams connectivity checks - independent of any ticket."""
     errors = []
 
     if not token_missing:
@@ -129,9 +100,6 @@ def _validate_connectivity(
                 f"[System] Jenkins connection check failed: {jenkins_client.last_check_detail}", LogLevel.FAILURE
             )
 
-    # Teams connectivity is checked (refreshing the cache/chip) but doesn't
-    # block the run - notifications are a best-effort side channel (see
-    # core/notifications.py), not a reason to stop actual Jenkins work.
     if teams_client.webhook_url.strip():
         if teams_client.check_connection():
             _log_connectivity_pass(log_buffer, "Teams", teams_client)
@@ -144,9 +112,6 @@ def _validate_connectivity(
 
 
 def _log_connectivity_pass(log_buffer: LogBuffer, service_name: str, client: JenkinsClient | MSTeamsClient) -> None:
-    """Logs a passing connectivity check - distinguishing a fresh network
-    probe from one skipped because the cache already held a fresh "ok", so a
-    passing check isn't silent either way."""
     if client.last_check_was_cached:
         log_buffer.append(f"[System] {service_name} connection check skipped (cached, last check OK)", LogLevel.INFO)
     else:

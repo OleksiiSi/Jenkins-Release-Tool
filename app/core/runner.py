@@ -17,13 +17,6 @@ from core.models.run_context import RunContext
 
 
 class Runner:
-    """Orchestrates build -> poll -> promote-per-environment-in-parallel for
-    a batch of tickets, submitting every step to its own executor. One
-    instance can be reused across multiple `start()` calls - everything in
-    `context` is fixed for the process lifetime, and the executor is built
-    once, here, for the same reason (nothing outside Runner ever submits to
-    it, so nobody else needs a reference to construct or share it)."""
-
     def __init__(self, context: RunContext):
         self.context = context
         self._executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
@@ -31,31 +24,9 @@ class Runner:
 
     @property
     def is_in_progress(self) -> bool:
-        """True if any future submitted by any `start()` call so far -
-        across possibly multiple overlapping runs - isn't done yet. False
-        before the first `start()` call (the list starts empty) and once
-        every submitted future has completed."""
         return not all(future.done() for future in self._active_futures)
 
     def start(self, tickets: list[TicketEnvRequest]) -> None:
-        """Submit one task per (ticket x job) and return immediately -
-        doesn't block until the run finishes. Each task builds, then (on
-        success) submits one promotion task per environment to the same
-        executor and waits on those - so `context.executor` needs a generous
-        worker count. A worker blocked waiting on other futures does not free
-        itself up to run other queued tasks in the meantime; with too few
-        workers, enough simultaneous build tasks blocked on their own
-        promotion futures can starve those very promotion tasks of a thread
-        to run on, deadlocking the run. Threads (not asyncio) is a deliberate
-        MVP choice for this app's scale - if starvation ever becomes a real
-        risk rather than a theoretical one, migrating to asyncio
-        (httpx.AsyncClient + asyncio.sleep instead of requests + blocking
-        time.sleep) is the known escape hatch. One more worker stays blocked
-        for the whole run's duration beyond that: one task per ticket that
-        waits on just that ticket's own job futures to log when the ticket
-        finishes - factor these into `max_workers` sizing too, alongside
-        `_track_new_futures`'s job of keeping `_active_futures` accurate
-        across overlapping `start()` calls."""
         self.context.log_buffer.append(
             f"[System] Run started for tickets: {', '.join(ticket.ticket_id for ticket in tickets)}", LogLevel.INFO
         )
@@ -64,12 +35,6 @@ class Runner:
 
         for ticket in tickets:
             ticket_futures: list[Future] = []
-            # Parallel to `ticket_futures` - job_name for each submitted
-            # task, so _log_ticket_finished can attribute an unhandled
-            # exception back to the job it came from without needing
-            # JobRunResult (which isn't available when a task raised
-            # instead of returning one). ticket_id isn't needed here - every
-            # job in this list belongs to the same `ticket`.
             ticket_job_names: list[str] = []
 
             for job in ticket.jobs:
@@ -83,11 +48,6 @@ class Runner:
         self._track_new_futures(all_new_futures)
 
     def _track_new_futures(self, new_futures: list[Future]) -> None:
-        """Folds this `start()` call's futures into `_active_futures`,
-        dropping any already-done futures from a prior overlapping
-        `start()` call along the way - so `is_in_progress` reflects every
-        run still active, not just the most recent one, without the list
-        growing unboundedly across a long-running session."""
         still_running_futures = [future for future in self._active_futures if not future.done()]
         self._active_futures = still_running_futures + new_futures
 
@@ -98,12 +58,6 @@ class Runner:
         failed = 0
 
         for future, job_name in zip(futures, job_names):
-            # A worker task's exception is only surfaced by fetching it -
-            # wait() alone would let it vanish silently (a documented
-            # ThreadPoolExecutor footgun: nothing else in this run ever
-            # calls .result() on these top-level futures). Checking
-            # every future here, once, closes that hole - the only other
-            # thing done with them (is_in_progress) just checks .done().
             exc = future.exception()
 
             if exc is not None:
@@ -131,10 +85,6 @@ class Runner:
         )
 
     def _notify(self, title: str, message: str, ticket_id: str, tag: str) -> None:
-        """Fire both notification channels (core.notifications.notify) and,
-        if the Teams send specifically failed, surface it in the UI log
-        panel - it otherwise only reaches a Python logger the QA user never
-        sees."""
         teams_failure_detail = notifications.notify(title, message, self.context.teams_webhook_url)
 
         if teams_failure_detail:
@@ -168,10 +118,6 @@ class Runner:
         job_run_result = JobRunResult(ticket_id=ticket.ticket_id, job_name=job.job_name)
 
         def on_build_number_resolved(build_number: int) -> None:
-            # Fired from inside _run_single_build as soon as the queue item
-            # resolves, before it starts polling build status - so the log
-            # panel shows the build number the moment it's known, not only
-            # once the build finishes.
             job_run_result.build_number = build_number
             self.context.log_buffer.append(
                 f"[{ticket.ticket_id}][{job_run_result.tag}][Build] Build number assigned", LogLevel.INFO

@@ -14,22 +14,7 @@ from core.runner import Runner
 
 
 class Api:
-    """The pywebview js_api bridge - the only file that imports both core/
-    and exposes methods to JS. Every method here is a thin delegation to
-    core/; no business logic lives here.
-    """
-
     def __init__(self):
-        # Set by main.py right after webview.create_window() returns (Api is
-        # constructed first, so the window doesn't exist yet in __init__).
-        # Used only to destroy() the WebView2 control cleanly before
-        # restart_app()/exit_app() tear down the process - see those methods.
-        # MUST stay underscore-prefixed: pywebview's js_api introspection
-        # (webview/util.py's get_functions()) walks every *public* attribute
-        # reachable from this object to build the JS bridge, recursing into
-        # non-callable ones - a public `self.window` here made it recurse
-        # into the Window object's own attributes and crash on a .NET
-        # Rectangle geometry property pythonnet couldn't compare against Api.
         self._window: webview.Window | None = None
 
         settings = settings_manager.load_settings()
@@ -60,9 +45,6 @@ class Api:
             for ticket_request in ticket_requests
         ]
         for index, ticket in enumerate(ticket_requests, start=1):
-            # Mirrors the "Ticket N" placeholder shown in the UI's ticket-ID
-            # input when left blank - normalized here, once, so validation
-            # messages and the actual run/log output agree on the same ID.
             ticket.ticket_id = ticket.ticket_id.strip() or f"Ticket {index}"
 
         user_input_check = validate(
@@ -113,31 +95,14 @@ class Api:
         }
 
     def restart_app(self) -> None:
-        # Dispose the WebView2 control before re-launching - os.execv on
-        # Windows isn't a true in-place replace (it spawns the new process,
-        # then _exit(0)s this one - see bpo-19124/bpo-9148), so without this
-        # the old, uncleanly-killed WebView2 helper processes and the new
-        # process's fresh WebView2 environment can contend over the same
-        # user-data-folder lock, slowing down the very restart this triggers.
         if self._window is not None:
-            # is_exiting=True stops main.py's on_closing() from mistaking the
-            # Form.Close() destroy() triggers for the user clicking "X" and
-            # firing its "still running in background" toast - misleading
-            # here, since the app is restarting, not backgrounding.
             self._window.is_exiting = True
             self._window.destroy()
 
         os.execv(sys.executable, [sys.executable] + sys.argv)
 
     def exit_app(self) -> None:
-        # Full process termination, not a graceful shutdown - in-progress
-        # builds/promotions are killed outright. Same semantics as the tray
-        # icon's "Exit" (main.py), just reachable without opening the tray menu.
-        # window.destroy() first still lets WebView2 dispose its own helper
-        # processes cleanly rather than being orphaned by os._exit() - it
-        # only tears down the UI, not any of the background work.
         if self._window is not None:
-            # See restart_app()'s comment - same misleading-toast risk here.
             self._window.is_exiting = True
             self._window.destroy()
 

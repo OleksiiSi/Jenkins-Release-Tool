@@ -27,12 +27,10 @@ def _save_cache(cache_key: str, cache_value: dict) -> None:
 
 
 def get_cache_entry(cache_key: str) -> dict | None:
-    """Raw cache entry recorded for `cache_key`, or None if never recorded."""
     return _load_cache().get(cache_key, None)
 
 
 def matches_cached_value(cache_entry: dict, value: str) -> bool:
-    """True if `value` hashes the same as the value in `cache_entry`."""
     return cache_entry.get("hash", None) == _hash(value)
 
 

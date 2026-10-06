@@ -15,8 +15,6 @@ def save_settings(data: dict) -> None:
 
 
 def reset_to_defaults() -> dict:
-    """Overwrite settings.json with settings.default.json's contents and
-    return the restored settings."""
     defaults = json.loads(SETTINGS_DEFAULT_PATH.read_text(encoding="utf-8"))
     save_settings(defaults)
 

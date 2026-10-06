@@ -8,19 +8,6 @@ logger = logging.getLogger(__name__)
 
 
 def notify(title: str, message: str, teams_webhook_url: str | None = None) -> str | None:
-    """Fire both notification channels, unconditionally and independently.
-
-    A failure in one channel must never prevent the other from firing or
-    crash the calling worker thread - each channel is isolated in its own
-    try/except.
-
-    :return: The Teams failure detail if the Teams send failed, else None -
-        covers both "it succeeded" and "Teams wasn't configured for this
-        call". Toast failures stay silent (logged, not returned) per this
-        function's existing best-effort design; callers that want a Teams
-        failure surfaced in the UI log panel act on this return value
-        themselves, keeping this module free of any LogBuffer/UI dependency.
-    """
     notify_toast(title, message)
     if teams_webhook_url:
         return notify_teams(title, message, teams_webhook_url)

@@ -1,7 +1,3 @@
-// Config loaded once from settings.json at startup (see main.js's init()) -
-// effectively read-only afterward. Distinct from session-state.js, which
-// holds state that mutates as the user interacts with the app.
-
 export let generalParametersConfig = [];
 export let generalEnvironmentsConfig = [];
 export let jobsConfig = {};

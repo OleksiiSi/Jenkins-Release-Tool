@@ -37,10 +37,6 @@ async function init() {
     setInterval(() => refreshConnectionChips().catch(console.error), 30000);
 }
 
-// Static chrome controls are fixed elements in index.html (not cloned from a
-// <template>), so they're wired once here via addEventListener rather than
-// inline onclick= attributes. Keeps index.html free of script, matching how
-// every template-cloned element is already wired from JS in its own module.
 function wireStaticControls() {
     document.getElementById('logTabBtn').addEventListener('click', () => showTab('log'));
     document.getElementById('settingsBtn').addEventListener('click', () => showTab('settings'));
@@ -57,20 +53,14 @@ function wireStaticControls() {
     document.getElementById('resetSettingsBtn').addEventListener('click', () => showModal('resetModal'));
     document.getElementById('saveSettingsBtn').addEventListener('click', onSaveClicked);
 
-    // Both tab views' back buttons perform the identical showTab('main') -
-    // no per-button id needed.
     document.querySelectorAll('.back-btn').forEach((button) => {
         button.addEventListener('click', () => showTab('main'));
     });
 
-    // Every modal's Cancel button just hides its own modal - resolve which
-    // one generically from the ancestor .modal-overlay's id instead of
-    // wiring each one by hand.
     document.querySelectorAll('.modal-btn-cancel').forEach((button) => {
         button.addEventListener('click', () => hideModal(button.closest('.modal-overlay').id));
     });
 
-    // Confirm buttons each run a different action, so map modal id -> handler.
     const modalConfirmHandlers = {
         restartModal: confirmSaveAndRestart,
         removeTicketModal: confirmRemoveTicket,

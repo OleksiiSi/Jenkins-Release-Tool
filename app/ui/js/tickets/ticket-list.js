@@ -23,9 +23,6 @@ export function addTicket() {
     renumberTicketPlaceholders();
 }
 
-// Keeps each card's ticket-ID placeholder ("Ticket 1", "Ticket 2", ...) in
-// sync with its position, matching the fallback label core/validation.py
-// uses for a ticket whose ID is left blank - a transparent hint, not a value.
 export function renumberTicketPlaceholders() {
     const cards = document.getElementById('ticketsList').children;
 
