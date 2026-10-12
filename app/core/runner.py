@@ -196,7 +196,8 @@ class Runner:
 
                 status = self.context.jenkins_client.get_build_status(job_name, build_number)
 
-                if not status["building"]:
+                # building=False with result=None means the build is still waiting for an executor, not started.
+                if not status["building"] and status["result"] is not None:
                     return status["result"] == "SUCCESS", build_number, None
 
         except Exception as exc:
@@ -276,7 +277,8 @@ class Runner:
 
                 status = self.context.jenkins_client.get_promotion_status(job_name, build_number, promotion_name)
 
-                if not status["building"]:
+                # building=False with result=None means the promotion hasn't started or appeared yet, not started.
+                if not status["building"] and status["result"] is not None:
                     return status["result"] == "SUCCESS", None
 
         except Exception as exc:
