@@ -17,6 +17,7 @@
         <div class="titlebar-tabs">
             <button class="tab-btn" id="logTabBtn">📜 Log</button>
             <button class="tab-btn" id="settingsBtn">⚙ Settings</button>
+            <button class="tab-btn" id="helpBtn">? Help</button>
             <span class="titlebar-sep"></span>
             <button class="tab-btn danger" id="exitBtn">⏻ Exit</button>
         </div>
@@ -144,6 +145,195 @@
         <div class="settings-footer">
             <button class="btn-reset" id="resetSettingsBtn">Reset to defaults</button>
             <button class="btn-save" id="saveSettingsBtn">Save</button>
+        </div>
+    </div>
+
+    <!-- HELP TAB - static tutorial copy, edit the text in place. Written to the
+         Google developer documentation style guide: second person, sentence-case
+         headings, numbered steps, UI labels in bold exactly as they appear. -->
+    <div class="tab-view" id="helpView">
+        <div class="tab-back-bar">
+            <button class="back-btn">← Back</button>
+        </div>
+        <div class="help-layout">
+            <nav class="help-nav" aria-label="Help contents">
+                <ul>
+                    <li><a href="#help-setup">Set up Release Tool</a>
+                        <ul>
+                            <li><a href="#help-token">Get a Jenkins API token</a></li>
+                            <li><a href="#help-settings">Enter your settings</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#help-configure">Configure jobs and environments</a>
+                        <ul>
+                            <li><a href="#help-general">Add general parameters and environments</a></li>
+                            <li><a href="#help-job-specific">Add jobs</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#help-run">Run builds and promotions</a>
+                        <ul>
+                            <li><a href="#help-tickets">Add tickets and run them</a></li>
+                            <li><a href="#help-during-run">Build and promotion flow</a></li>
+                            <li><a href="#help-log">Follow the log</a></li>
+                            <li><a href="#help-close">Close or exit the app</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="help-content">
+                <article class="help-inner">
+                    <h2>Release Tool help</h2>
+                    <p>Release Tool builds your Jenkins jobs for one or more tickets at once and promotes the builds to your test environments. This page explains how to set up the app, configure your jobs and environments, and run builds and promotions.</p>
+
+                    <!-- ===== Set up Release Tool ===== -->
+                    <h3 id="help-setup">Set up Release Tool</h3>
+                    <p>Before your first run, connect Release Tool to Jenkins and, optionally, to Microsoft Teams. You need to do this only once.</p>
+
+                    <h4 id="help-token">Get a Jenkins API token</h4>
+                    <p>Release Tool signs in to Jenkins with your username and an API token instead of your password. To create a token, do the following:</p>
+                    <ol>
+                        <li>In your browser, sign in to Jenkins.</li>
+                        <li>In the Jenkins page header, click your name.</li>
+                        <li>On your user page, click <strong>Security</strong>. In older Jenkins versions, click <strong>Configure</strong> instead.</li>
+                        <li>In the <strong>API Token</strong> section, click <strong>Add new Token</strong>.</li>
+                        <li>Enter a name for the token, such as <code>Release Tool</code>, and then click <strong>Generate</strong>.</li>
+                        <li>Copy the token. Jenkins shows the token only once. If you lose it, generate a new one.</li>
+                    </ol>
+
+                    <h4 id="help-settings">Enter your settings</h4>
+                    <p>The <strong>Settings</strong> page has the following setup fields:</p>
+                    <dl>
+                        <dt>Base URL</dt>
+                        <dd>The address of your Jenkins server, such as <code>https://jenkins.example.com</code>.</dd>
+                        <dt>Username</dt>
+                        <dd>The username that you sign in to Jenkins with, which might differ from the display name that Jenkins shows in its page header.</dd>
+                        <dt>Jenkins API token</dt>
+                        <dd>The token that you created in Jenkins, which Release Tool stores in Windows Credential Manager.</dd>
+                        <dt>Poll interval (min)</dt>
+                        <dd>How often, in minutes, Release Tool checks whether a build or promotion has finished.</dd>
+                        <dt>Max retries</dt>
+                        <dd>How many more times Release Tool tries a failed build or promotion, so <code>2</code> means up to three attempts in total.</dd>
+                        <dt>MS Teams webhook URL</dt>
+                        <dd>Optional: The Microsoft Teams Workflows webhook that gets a message for every finished build and promotion.</dd>
+                    </dl>
+                    <p>To enter your settings, do the following:</p>
+                    <ol>
+                        <li>In the title bar, click <strong>Settings</strong>.</li>
+                        <li>Fill in the <strong>Base URL</strong>, <strong>Username</strong>, <strong>Poll interval (min)</strong>, and <strong>Max retries</strong> fields.</li>
+                        <li>In the <strong>MS Teams webhook URL</strong> field, do one of the following:
+                            <ul>
+                                <li>To get Teams messages, replace the example address with your webhook URL.</li>
+                                <li>If you don't use Teams, delete the example address so that the field is empty.</li>
+                            </ul>
+                        </li>
+                        <li>If a token is already saved, click <strong>Change</strong>.</li>
+                        <li>In the <strong>Jenkins API token</strong> field, paste your token, and then click <strong>Save token</strong>.</li>
+                        <li>Click <strong>Save</strong>, and then in the <strong>Restart required</strong> dialog, click <strong>Restart</strong>. Release Tool restarts and starts using your new settings and token.</li>
+                        <li>In the title bar, check the dots next to <strong>Jenkins</strong> and <strong>Teams</strong>. A green dot means that the connection works, and a red dot means that it failed.</li>
+                    </ol>
+                    <aside class="help-note"><strong>Note:</strong> If you leave the <strong>MS Teams webhook URL</strong> field empty, then the Teams dot stays red. This is expected, and your runs still work.</aside>
+
+                    <!-- ===== Configure jobs and environments ===== -->
+                    <h3 id="help-configure">Configure jobs and environments</h3>
+                    <p>Release Tool can build only the jobs and promote only to the environments that you add in the <strong>Jobs Config</strong> section of the <strong>Settings</strong> page. Enter every job, parameter, and promotion process name exactly as it appears in Jenkins, including uppercase and lowercase letters.</p>
+                    <p>When you first open the <strong>Settings</strong> page, the <strong>Jobs Config</strong> section contains example rows whose names start with <code>REPLACE_WITH_</code>. Rename each one to match Jenkins. To remove an example row, click its <strong>✕</strong>.</p>
+
+                    <h4 id="help-general">Add general parameters and environments</h4>
+                    <p>Use the <strong>General</strong> section for parameters and environments that all your jobs share. Every ticket shows them once, and Release Tool applies them to every job that you select on that ticket.</p>
+                    <p>Each parameter row has the following fields:</p>
+                    <dl>
+                        <dt>Parameter name</dt>
+                        <dd>The name of the build parameter in Jenkins, such as <code>BRANCH</code>.</dd>
+                        <dt>Type</dt>
+                        <dd>How you enter the value on a ticket: <strong>string</strong> for text, <strong>boolean</strong> for a checkbox, or <strong>dropdown</strong> for a list of options.</dd>
+                        <dt>Options</dt>
+                        <dd>For a <strong>dropdown</strong> parameter only, the values to choose from, separated by commas.</dd>
+                        <dt>unique</dt>
+                        <dd>Select this checkbox if every ticket in a run must use a different value, such as a branch name.</dd>
+                    </dl>
+                    <p>Each environment row has the following fields:</p>
+                    <dl>
+                        <dt>Environment</dt>
+                        <dd>The name that you see on tickets, such as <code>QA16</code>.</dd>
+                        <dt>Promotion process name</dt>
+                        <dd>The name of the Jenkins promotion process that promotes builds to this environment, which can differ from the environment name.</dd>
+                    </dl>
+                    <p>To add a general parameter or environment, do the following:</p>
+                    <ol>
+                        <li>In the title bar, click <strong>Settings</strong>.</li>
+                        <li>In the <strong>Jobs Config</strong> section, under <strong>General</strong>, click <strong>Add parameter</strong> or <strong>Add environment</strong>.</li>
+                        <li>Fill in the new row.</li>
+                        <li>Click <strong>Save</strong>, and then click <strong>Restart</strong>.</li>
+                    </ol>
+
+                    <h4 id="help-job-specific">Add jobs</h4>
+                    <p>Use the <strong>Job Specific</strong> section to add the Jenkins jobs that you want to build. A ticket shows the parameters and environments of a job only when you select that job.</p>
+                    <p>To add a job, do the following:</p>
+                    <ol>
+                        <li>In the title bar, click <strong>Settings</strong>.</li>
+                        <li>In the <strong>Jobs Config</strong> section, under <strong>Job Specific</strong>, click <strong>Add job</strong>.</li>
+                        <li>In the <strong>Job name</strong> field, enter the name of the Jenkins job.</li>
+                        <li>Optional: To add a parameter that only this job uses, in the job card, click <strong>Add parameter</strong>, and then fill in the row the same way as for a general parameter.</li>
+                        <li>Optional: To add an environment that only this job can be promoted to, in the job card, click <strong>Add environment</strong>, and then fill in the row.</li>
+                        <li>Click <strong>Save</strong>, and then click <strong>Restart</strong>.</li>
+                    </ol>
+                    <p>The <strong>unique</strong> checkbox is available only for general parameters. To remove a job, parameter, or environment, click its <strong>✕</strong>.</p>
+
+                    <!-- ===== Run builds and promotions ===== -->
+                    <h3 id="help-run">Run builds and promotions</h3>
+                    <p>A ticket is one piece of work, such as a bug fix or a feature, that you want to build and promote. In one run, Release Tool builds the selected jobs of every ticket at the same time, and then promotes each successful build to the selected environments.</p>
+
+                    <h4 id="help-tickets">Add tickets and run them</h4>
+                    <p>To start a run, do the following:</p>
+                    <ol>
+                        <li>On the main screen, click <strong>Add ticket</strong>.</li>
+                        <li>In the ticket header, enter the ticket ID, such as <code>ID-001</code>.</li>
+                        <li>Under <strong>General parameters</strong>, enter a value for every parameter.</li>
+                        <li>Optional: Under <strong>General environments</strong>, select the environments to promote every selected job to.</li>
+                        <li>Under <strong>Jobs</strong>, select the jobs to build.</li>
+                        <li>For each selected job that has its own parameters, under <strong>Parameters</strong>, enter a value for every parameter.</li>
+                        <li>Optional: For each selected job that has its own environments, under <strong>Environments</strong>, select the environments to promote only that job to.</li>
+                        <li>Optional: To add more tickets, repeat steps 1 through 7.</li>
+                        <li>Click <strong>Run all</strong>.</li>
+                    </ol>
+                    <p>To collapse or expand a ticket, click its header. To remove a ticket, in its header, click <strong>✕</strong>.</p>
+                    <p>Before the run starts, Release Tool checks the following:</p>
+                    <ul>
+                        <li>Every ticket has at least one job selected.</li>
+                        <li>Every parameter has a value.</li>
+                        <li>Every parameter with the <strong>unique</strong> checkbox selected has a different value on each ticket.</li>
+                        <li>Your API token is saved.</li>
+                        <li>Release Tool can connect to Jenkins.</li>
+                    </ul>
+                    <p>If a check fails, then a banner lists the problems. Fix them, and then click <strong>Run all</strong> again. If the banner says that the API token isn't set, click <strong>Open settings</strong> and follow the steps in the <a href="#help-settings">Enter your settings</a> section of this page.</p>
+                    <p>When the run starts, the ticket list clears and <strong>Running</strong> appears next to <strong>Run all</strong>. When every build and promotion finishes, the status changes back to <strong>Ready to run</strong>.</p>
+
+                    <h4 id="help-during-run">Build and promotion flow</h4>
+                    <p>For every selected job on every ticket, Release Tool does the following:</p>
+                    <ol>
+                        <li>Starts a Jenkins build with the parameter values from the ticket.</li>
+                        <li>Checks the build status once per poll interval until the build finishes.</li>
+                        <li>If the build fails, starts it again, up to the number of times in <strong>Max retries</strong>. If every attempt fails, then Release Tool sends a failure notification and doesn't promote the build.</li>
+                        <li>If the build succeeds, sends a success notification and promotes the build to every selected environment at the same time.</li>
+                        <li>Checks and retries each promotion the same way as the build, and sends a notification when the promotion succeeds or fails after all retries.</li>
+                    </ol>
+                    <p>Every notification appears as a Windows notification and, if you set a Teams webhook, as a Teams message. If you select no environments for a job, then Release Tool builds the job but doesn't promote it. If a build is already promoted to an environment, then Release Tool promotes it again and adds a warning to the log.</p>
+
+                    <h4 id="help-log">Follow the log</h4>
+                    <p>To watch a run, in the title bar, click <strong>Log</strong>. Each line shows the time, ticket ID, job name, build number, and stage, which is <code>Build</code> or <code>Promote</code>. For example:</p>
+                    <pre class="help-example">[11-10-2026 14:05:12.345] [ID-001][UI - #103][Build] SUCCESS</pre>
+                    <p>Success lines are green, failure lines are red, and warning lines are yellow. To empty the log, click <strong>Clear</strong>.</p>
+
+                    <h4 id="help-close">Close or exit the app</h4>
+                    <p>When you close the window, Release Tool keeps running in the notification area of the Windows taskbar, so it keeps tracking your builds and promotions. To open the window again, do the following:</p>
+                    <ol>
+                        <li>If you don't see the Release Tool icon in the notification area, click <strong>Show hidden icons</strong>.</li>
+                        <li>Right-click the Release Tool icon, and then click <strong>Open</strong>.</li>
+                    </ol>
+                    <p>To close Release Tool completely, in the title bar or in the icon menu, click <strong>Exit</strong>. Release Tool then stops tracking running builds and promotions, and it doesn't start any promotions that are still waiting.</p>
+                </article>
+            </div>
         </div>
     </div>
 

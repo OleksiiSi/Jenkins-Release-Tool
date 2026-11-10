@@ -40,6 +40,7 @@ async function init() {
 function wireStaticControls() {
     document.getElementById('logTabBtn').addEventListener('click', () => showTab('log'));
     document.getElementById('settingsBtn').addEventListener('click', () => showTab('settings'));
+    document.getElementById('helpBtn').addEventListener('click', () => showTab('help'));
     document.getElementById('exitBtn').addEventListener('click', () => showModal('exitModal'));
     document.getElementById('addTicketBtn').addEventListener('click', addTicket);
     document.getElementById('tokenErrorBannerLink').addEventListener('click', (event) => { event.preventDefault(); showTab('settings');} );

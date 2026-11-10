@@ -569,3 +569,57 @@ body {
 
 .param-input-row { margin-bottom: 12px; }
 .general-params-list .param-input-row:last-child { margin-bottom: 0; }
+
+/* ---------- Help tab ---------- */
+.help-layout { flex: 1; display: flex; min-height: 0; }
+.help-nav {
+    width: 240px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    padding: 20px 16px;
+    overflow-y: auto;
+    font-size: 13px;
+}
+.help-nav ul { list-style: none; margin: 0; padding: 0; }
+.help-nav ul ul { padding-left: 14px; margin-bottom: 8px; font-size: 12px; }
+.help-nav a { display: block; padding: 4px 0; color: var(--text-dim); text-decoration: none; }
+.help-nav a:hover, .help-nav a:focus-visible { color: var(--accent); }
+
+/* The only scroll container on this tab, so #help-... jumps never scroll the title bar away. */
+.help-content { flex: 1; min-height: 0; overflow-y: auto; }
+.help-inner { max-width: 760px; padding: 24px 28px 60px; line-height: 1.6; }
+.help-inner h2 { font-size: 18px; margin: 0 0 8px; }
+.help-inner h3 {
+    font-size: 15px;
+    margin: 32px 0 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+.help-inner h4 { font-size: 13px; color: var(--accent); margin: 20px 0 6px; }
+.help-inner h3, .help-inner h4 { scroll-margin-top: 16px; }
+.help-inner p, .help-inner li, .help-inner dd, .help-note { color: var(--text-dim); }
+.help-inner strong, .help-inner dt { color: var(--text); }
+.help-inner p { margin: 0 0 10px; }
+.help-inner ol, .help-inner ul { margin: 0 0 12px; padding-left: 22px; }
+.help-inner li { margin: 4px 0; }
+.help-inner dl { margin: 0 0 12px; }
+.help-inner dt { font-weight: 600; margin-top: 8px; }
+.help-inner dd { margin: 0 0 0 16px; }
+.help-inner a { color: var(--accent); }
+.help-inner code, .help-example {
+    font-family: Consolas, "Cascadia Mono", monospace;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--panel-alt);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+.help-inner code { padding: 1px 5px; }
+.help-example { margin: 0 0 10px; padding: 8px 12px; overflow-x: auto; }
+.help-note {
+    margin: 0 0 10px;
+    background: var(--panel);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    padding: 8px 12px;
+}

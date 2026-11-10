@@ -22,6 +22,7 @@ packaging/*.spec
 # Claude Code / Superpowers local state and internal docs - not for the public repo
 .remember/
 .claude/
+.superpowers/
 
 # Internal build spec/design notes - not for the public repo
 CLAUDE.md

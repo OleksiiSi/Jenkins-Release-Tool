@@ -1,32 +1,15 @@
+const TAB_VIEWS = {
+    log: { viewId: 'logView', buttonId: 'logTabBtn' },
+    settings: { viewId: 'settingsView', buttonId: 'settingsBtn' },
+    help: { viewId: 'helpView', buttonId: 'helpBtn' },
+};
+
 export function showTab(name) {
-    const main = document.getElementById('mainView');
-    const log = document.getElementById('logView');
-    const settings = document.getElementById('settingsView');
-    const logBtn = document.getElementById('logTabBtn');
-    const settingsBtn = document.getElementById('settingsBtn');
+    document.getElementById('mainView').classList.toggle('hidden', name in TAB_VIEWS);
 
-    main.classList.add('hidden');
-
-    log.classList.remove('active');
-    logBtn.classList.remove('active');
-
-    settings.classList.remove('active');
-    settingsBtn.classList.remove('active');
-
-    switch (name) {
-        case 'log':
-            log.classList.add('active');
-            logBtn.classList.add('active');
-            break;
-
-        case 'settings':
-            settings.classList.add('active');
-            settingsBtn.classList.add('active');
-            break;
-
-        default:
-            main.classList.remove('hidden');
-            break;
+    for (const [tabName, { viewId, buttonId }] of Object.entries(TAB_VIEWS)) {
+        document.getElementById(viewId).classList.toggle('active', tabName === name);
+        document.getElementById(buttonId).classList.toggle('active', tabName === name);
     }
 }
 
